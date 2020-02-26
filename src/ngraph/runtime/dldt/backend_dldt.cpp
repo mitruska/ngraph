@@ -86,7 +86,7 @@ Blob::Ptr fill_blob(SizeVector shape, std::vector<float> data)
 
 extern "C" DLDT_BACKEND_API void ngraph_register_dldt_backend()
 {
-    ngraph::runtime::BackendManager::register_backend("DLDLT", [](const std::string& config) {
+    ngraph::runtime::BackendManager::register_backend("DLDT", [](const std::string& config) {
         return std::make_shared<ngraph::runtime::dldt::DLDT_Backend>(config);
     });
 }
