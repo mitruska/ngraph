@@ -372,7 +372,7 @@ set(MULTI_TEST_SRC
     backend/zero_sized.in.cpp
 )
 
-if (NGRAPH_UNIT_TEST_OPENVINO_ENABLE)
+if (NGRAPH_DLDT_ENABLE)
     set(MULTI_TEST_SRC
             backend/abc.in.cpp
             backend/abs.in.cpp
@@ -512,7 +512,7 @@ foreach(BACKEND_NAME ${ACTIVE_BACKEND_LIST})
     # different random seeds. On the CPU backend this is currently very slow
     # because the autodiff tests recompile with each iteration. That behavior
     # can be changed, but it's a bit involved, so for the time being we just
-    # reduce the number of test iterations on non-INTERPRETER backends.
+    # reduce the number of test iteratiodld
     if(${BACKEND_NAME} MATCHES ^INTERPRETER$)
         set(TEST_LOOPS 100)
     else()
@@ -582,6 +582,12 @@ if (NGRAPH_PLAIDML_ENABLE)
     target_link_libraries(unit-test PRIVATE plaidml_backend)
     # Some PlaidML devices aren't so precise, so we increase the allowable tolerance.
     target_compile_definitions(unit-test PRIVATE "PlaidML_FLOAT_TOLERANCE_BITS=12")
+endif()
+
+if (NGRAPH_DLDT_ENABLE)
+    target_link_libraries(unit-test PRIVATE dldt_backend)
+    # Some PlaidML devices aren't so precise, so we increase the allowable tolerance.
+    target_compile_definitions(unit-test PRIVATE NGRAPH_DLDT_ENABLE)
 endif()
 
 if (NGRAPH_TBB_ENABLE)

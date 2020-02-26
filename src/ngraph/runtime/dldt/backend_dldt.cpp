@@ -18,8 +18,9 @@
 #include <tbb/tbb_stddef.h>
 #endif
 
-#include "dldt_backend_visibility.hpp"
+#include "ngraph/runtime/dldt/dldt_backend_visibility.hpp"
 
+#include <ie_core.hpp>
 #include "ngraph/component_manager.hpp"
 #include "ngraph/graph_util.hpp"
 #include "ngraph/log.hpp"
@@ -28,27 +29,64 @@
 #include "ngraph/runtime/dldt/dldt_tensor_view.hpp"
 #include "ngraph/util.hpp"
 
-#ifdef NGRAPH_MLIR_ENABLE
-#include "contrib/mlir/backend/cpu/cpu_backend.hpp"
-#include "contrib/mlir/core/compiler.hpp"
-#endif
-
-using namespace ngraph;
 using namespace std;
+using namespace ngraph;
+using namespace InferenceEngine;
+
+ngraph::runtime::dldt::DLDT_Backend::DLDT_Backend(const std::string& configuration_string)
+    : device(configuration_string)
+{
+}
+
+std::shared_ptr<ngraph::runtime::Tensor>
+    ngraph::runtime::dldt::DLDT_Backend::create_tensor(const ngraph::element::Type& element_type,
+                                                       const ngraph::Shape& shape)
+{
+    return std::make_shared<DLDTTensorView>(element_type, shape);
+}
+
+std::shared_ptr<ngraph::runtime::Executable>
+    ngraph::runtime::dldt::DLDT_Backend::compile(std::shared_ptr<Function> func,
+                                                 bool /* enable_performance_data */)
+{
+    return std::make_shared<DLDT_Executable>(func, device);
+}
+
+bool ngraph::runtime::dldt::DLDT_Backend::is_supported(const Node& node) const
+{
+    return true;
+}
+
+bool ngraph::runtime::dldt::DLDT_Backend::is_supported_property(const Property /* prop */) const
+{
+    return false;
+}
+
+Blob::Ptr fill_blob(SizeVector shape, std::vector<float> data)
+{
+    Layout layout;
+    switch (shape.size())
+    {
+    case 1: layout = Layout::C; break;
+    case 2: layout = Layout::NC; break;
+    case 3: layout = Layout::CHW; break;
+    case 4: layout = Layout::NCHW; break;
+    case 5: layout = Layout::NCDHW; break;
+    default: THROW_IE_EXCEPTION << "Can't convert dims " << shape.size() << " to Layout!";
+    }
+    MemoryBlob::Ptr blob(new TBlob<float>({Precision::FP32, shape, layout}));
+    blob->allocate();
+    float* blob_ptr = blob->rwmap().as<float*>();
+    for (int i = 0; i < data.size(); i++)
+    {
+        blob_ptr[i] = data[i];
+    }
+    return blob;
+}
 
 extern "C" DLDT_BACKEND_API void ngraph_register_dldt_backend()
 {
-    runtime::BackendManager::register_backend("DLDT", [](const std::string& /* config */) {
-        static bool is_initialized = false;
-        if (!is_initialized)
-        {
-#if defined(NGRAPH_TBB_ENABLE)
-            // Force TBB to link to the backend
-            tbb::TBB_runtime_interface_version();
-#endif
-            ngraph::runtime::cpu::register_builders();
-            is_initialized = true;
-        }
-        return make_shared<runtime::cpu::DLDT_Backend>();
+    ngraph::runtime::BackendManager::register_backend("DLDLT", [](const std::string& config) {
+        return std::make_shared<ngraph::runtime::dldt::DLDT_Backend>(config);
     });
 }

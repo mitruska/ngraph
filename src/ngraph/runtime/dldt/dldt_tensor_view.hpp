@@ -56,7 +56,7 @@ namespace ngraph
                 DLDTTensorView(const DLDTTensorView&) = delete;
                 DLDTTensorView(DLDTTensorView&&) = delete;
                 DLDTTensorView& operator=(const DLDTTensorView&) = delete;
-
+           public:
                 std::vector<int8_t> data;
             };
         }
