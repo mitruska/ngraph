@@ -14,26 +14,27 @@
 # limitations under the License.
 # ******************************************************************************
 
+if (NGRAPH_DLDT_STATIC_LIB_ENABLE)
+    set(LIBRARY_TYPE STATIC)
+else()
+    set(LIBRARY_TYPE SHARED)
+endif()
+
 set(SRC
 	backend_dldt.cpp
+    backend_dldt.hpp
 	dldt_tensor_view.cpp
-	dldt_executable.hpp 
+    dldt_tensor_view.hpp
+	dldt_executable.cpp
+    dldt_executable.hpp
 )
 #add_library(libdldt INTERFACE)
+#target_include_directories(dldt_backend SYSTEM PUBLIC ${DLDT_INCLUDE_DIRS})
 #target_link_libraries(libdldt INTERFACE ${DLDT_LIBRARIES})
-add_library(libdldt_backend SHARED ${SRC})
-#target_include_directories(libdldt_backend SYSTEM PUBLIC ${DLDT_INCLUDE_DIRS})
-target_include_directories(libdldt_backend PUBLIC ${IE_MAIN_SOURCE_DIR}/include)
-target_link_libraries(libdldt_backend PRIVATE ngraph inference_engine)
-install(TARGETS libdldt_backend LIBRARY DESTINATION ${NGRAPH_INSTALL_LIB})
 
-target_compile_definitions(libdldt_backend PRIVATE DLDT_BACKEND_EXPORTS)
+add_library(dldt_backend ${LIBRARY_TYPE} ${SRC})
+target_compile_definitions(dldt_backend PRIVATE DLDT_BACKEND_EXPORTS)
+target_include_directories(dldt_backend PUBLIC ${IE_MAIN_SOURCE_DIR}/include)
+target_link_libraries(dldt_backend PUBLIC ngraph inference_engine)
 
-#set(CMAKE_MACOSX_RPATH 1)
-#if(APPLE)
-#    set_property(TARGET libdldt_backend PROPERTY INSTALL_RPATH "@loader_path/;@loader_path/../../..")
-#elseif(DEFINED NGRAPH_RPATH)
-#    set_property(TARGET libdldt_backend PROPERTY INSTALL_RPATH "\$ORIGIN;\$ORIGIN/../../..;${NGRAPH_RPATH}")
-#else()
-#    set_property(TARGET libdldt_backend PROPERTY INSTALL_RPATH "\$ORIGIN;\$ORIGIN/../../..")
-#endif()
+install(TARGETS dldt_backend LIBRARY DESTINATION ${NGRAPH_INSTALL_LIB})

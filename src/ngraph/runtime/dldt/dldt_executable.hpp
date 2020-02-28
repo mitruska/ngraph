@@ -22,10 +22,8 @@
 #include <unordered_map>
 #include <vector>
 
-#include <plaidml/plaidml++.h>
-
+#include <ie_core.hpp>
 #include "ngraph/runtime/backend.hpp"
-#include "ngraph/runtime/plaidml/plaidml_config.hpp"
 #include "ngraph/runtime/tensor.hpp"
 
 namespace ngraph
@@ -43,16 +41,13 @@ namespace ngraph
                 bool call(const std::vector<std::shared_ptr<runtime::Tensor>>& outputs,
                           const std::vector<std::shared_ptr<runtime::Tensor>>& inputs) final;
 
-                // std::vector<PerformanceCounter> get_performance_data() const final;
-
-                // void save_as_format(const std::string& filename, plaidml_file_format format)
-                // const;
-
-                // const std::shared_ptr<Function>& src_func() const { return m_src_func; }
             private:
                 InferenceEngine::CNNNetwork network;
                 std::string device;
             };
+
+            InferenceEngine::Blob::Ptr fill_blob(InferenceEngine::SizeVector shape,
+                                                 std::vector<float> data);
         }
     }
 }

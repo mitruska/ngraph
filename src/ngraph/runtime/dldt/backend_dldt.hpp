@@ -16,15 +16,12 @@
 
 #pragma once
 
-#include <ie_core.hpp>
 #include <string>
+
 #include "ngraph/opsets/opset.hpp"
 #include "ngraph/runtime/dldt/dldt_executable.hpp"
 #include "ngraph/runtime/dldt/dldt_tensor_view.hpp"
 #include "ngraph/runtime/tensor.hpp"
-//#include "ngraph/ngraph.hpp"
-
-InferenceEngine::Blob::Ptr fill_blob(InferenceEngine::SizeVector shape, std::vector<float> data);
 
 class Handle;
 

@@ -18,38 +18,43 @@
 #include <tbb/tbb_stddef.h>
 #endif
 
-#include "ngraph/runtime/dldt/dldt_backend_visibility.hpp"
+#include "backend_dldt.hpp"
 
-#include <ie_core.hpp>
 #include "ngraph/component_manager.hpp"
 #include "ngraph/graph_util.hpp"
 #include "ngraph/log.hpp"
 #include "ngraph/runtime/backend_manager.hpp"
-#include "ngraph/runtime/dldt/backend_dldt.hpp"
+#include "ngraph/runtime/dldt/dldt_backend_visibility.hpp"
 #include "ngraph/runtime/dldt/dldt_tensor_view.hpp"
 #include "ngraph/util.hpp"
 
 using namespace std;
 using namespace ngraph;
-using namespace InferenceEngine;
 
-ngraph::runtime::dldt::DLDT_Backend::DLDT_Backend(const std::string& configuration_string)
-    : device(configuration_string)
+ngraph::runtime::dldt::DLDT_Backend::DLDT_Backend(const string& configuration_string)
 {
+    string config = configuration_string;
+    // Get device name, after colon if present: DLDT_CPU -> CPU
+    auto separator = config.find(":");
+    if (separator != config.npos)
+    {
+        config = config.substr(separator);
+    }
+    device = config;
 }
 
-std::shared_ptr<ngraph::runtime::Tensor>
+shared_ptr<ngraph::runtime::Tensor>
     ngraph::runtime::dldt::DLDT_Backend::create_tensor(const ngraph::element::Type& element_type,
                                                        const ngraph::Shape& shape)
 {
-    return std::make_shared<DLDTTensorView>(element_type, shape);
+    return make_shared<DLDTTensorView>(element_type, shape);
 }
 
-std::shared_ptr<ngraph::runtime::Executable>
-    ngraph::runtime::dldt::DLDT_Backend::compile(std::shared_ptr<Function> func,
+shared_ptr<ngraph::runtime::Executable>
+    ngraph::runtime::dldt::DLDT_Backend::compile(shared_ptr<Function> func,
                                                  bool /* enable_performance_data */)
 {
-    return std::make_shared<DLDT_Executable>(func, device);
+    return make_shared<DLDT_Executable>(func, device);
 }
 
 bool ngraph::runtime::dldt::DLDT_Backend::is_supported(const Node& node) const
@@ -62,31 +67,9 @@ bool ngraph::runtime::dldt::DLDT_Backend::is_supported_property(const Property /
     return false;
 }
 
-Blob::Ptr fill_blob(SizeVector shape, std::vector<float> data)
-{
-    Layout layout;
-    switch (shape.size())
-    {
-    case 1: layout = Layout::C; break;
-    case 2: layout = Layout::NC; break;
-    case 3: layout = Layout::CHW; break;
-    case 4: layout = Layout::NCHW; break;
-    case 5: layout = Layout::NCDHW; break;
-    default: THROW_IE_EXCEPTION << "Can't convert dims " << shape.size() << " to Layout!";
-    }
-    MemoryBlob::Ptr blob(new TBlob<float>({Precision::FP32, shape, layout}));
-    blob->allocate();
-    float* blob_ptr = blob->rwmap().as<float*>();
-    for (int i = 0; i < data.size(); i++)
-    {
-        blob_ptr[i] = data[i];
-    }
-    return blob;
-}
-
 extern "C" DLDT_BACKEND_API void ngraph_register_dldt_backend()
 {
-    ngraph::runtime::BackendManager::register_backend("DLDT", [](const std::string& config) {
-        return std::make_shared<ngraph::runtime::dldt::DLDT_Backend>(config);
+    ngraph::runtime::BackendManager::register_backend("DLDT", [](const string& config) {
+        return make_shared<ngraph::runtime::dldt::DLDT_Backend>(config);
     });
 }

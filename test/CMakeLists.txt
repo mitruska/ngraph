@@ -215,14 +215,15 @@ if (NGRAPH_UNIT_TEST_OPENVINO_ENABLE)
     message(STATUS "NGRAPH_UNIT_TEST_OPENVINO_ENABLE = TRUE")
     add_definitions(-DNGRAPH_UNIT_TEST_OPENVINO_ENABLE)
 
-    if (ENABLE_MKL_DNN)
-        message(STATUS "NGRAPH_TESTS: CPU enabled")
-        set(ACTIVE_BACKEND_LIST ${ACTIVE_BACKEND_LIST} CPU)
-    endif()
-
-    if (ENABLE_CLDNN)
-        message(STATUS "NGRAPH_TESTS: GPU enabled")
-        set(ACTIVE_BACKEND_LIST ${ACTIVE_BACKEND_LIST} GPU)
+    if (NGRAPH_DLDT_ENABLE)
+        if (ENABLE_MKL_DNN)
+            message(STATUS "NGRAPH_TESTS: DLDT:CPU enabled")
+            set(ACTIVE_BACKEND_LIST ${ACTIVE_BACKEND_LIST} DLDT)
+        endif()
+        # if (ENABLE_CLDNN)
+        #     message(STATUS "NGRAPH_TESTS: DLDT:GPU enabled")
+        #     set(ACTIVE_BACKEND_LIST ${ACTIVE_BACKEND_LIST} DLDT)
+        # endif()
     endif()
 else()
     if (NGRAPH_INTERPRETER_ENABLE)
@@ -514,18 +515,24 @@ foreach(BACKEND_NAME ${ACTIVE_BACKEND_LIST})
     # different random seeds. On the CPU backend this is currently very slow
     # because the autodiff tests recompile with each iteration. That behavior
     # can be changed, but it's a bit involved, so for the time being we just
-    # reduce the number of test iteratiodld
+    # reduce the number of test iterations on non-INTERPRETER backends
     if(${BACKEND_NAME} MATCHES ^INTERPRETER$)
         set(TEST_LOOPS 100)
     else()
         set(TEST_LOOPS 2)
     endif()
+    # Check if backend name contains any attributes after colon, if yes strip them.
+    set(BACKEND_NAME_BASE ${BACKEND_NAME})
+    # string(FIND ${BACKEND_NAME_BASE} ":" SEPARATOR_POS)
+    # if(${SEPARATOR_POS} GREATER -1)
+    #     string(SUBSTRING ${BACKEND_NAME_BASE} 0 ${SEPARATOR_POS} BACKEND_NAME_BASE)
+    # endif()
 
-    string(TOLOWER ${BACKEND_NAME} BACKEND_DIR)
+    string(TOLOWER ${BACKEND_NAME_BASE} BACKEND_DIR)
     set(MANIFEST ${PROJECT_SOURCE_DIR}/src/ngraph/runtime/${BACKEND_DIR}/unit_test.manifest)
 
     foreach(TEST_SRC ${MULTI_TEST_SRC})
-        string(REPLACE ".in." "_${BACKEND_NAME}." TARGET_NAME ${TEST_SRC})
+        string(REPLACE ".in." "_${BACKEND_NAME_BASE}." TARGET_NAME ${TEST_SRC})
         configure_file(${TEST_SRC} ${TARGET_NAME})
         set(SRC ${CMAKE_CURRENT_BINARY_DIR}/${TARGET_NAME} ${SRC})
     endforeach()
@@ -588,8 +595,7 @@ endif()
 
 if (NGRAPH_DLDT_ENABLE)
     target_link_libraries(unit-test PRIVATE dldt_backend)
-    # Some PlaidML devices aren't so precise, so we increase the allowable tolerance.
-    target_compile_definitions(unit-test PRIVATE NGRAPH_DLDT_ENABLE)
+    # target_compile_definitions(unit-test PRIVATE "NGRAPH_DLDT_ENABLE")
 endif()
 
 if (NGRAPH_TBB_ENABLE)

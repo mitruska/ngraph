@@ -84,7 +84,7 @@ TEST(core_fusion, sigmoid_bprop_fusion)
     stringstream ss(json_string);
     shared_ptr<Function> func = ngraph::deserialize(ss);
     auto df = autodiff::backprop_function(func);
-    auto backend = runtime::Backend::create("DLDT");
+    auto backend = runtime::Backend::create("CPU");
     backend->compile(df);
     size_t ccg = count_ops_of_type<op::SigmoidBackprop>(df);
     ASSERT_EQ(ccg, 1);
