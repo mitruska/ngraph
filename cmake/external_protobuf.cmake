@@ -127,7 +127,7 @@ if (NOT TARGET protobuf::libprotobuf)
         IMPORTED_LOCATION "${Protobuf_LIBRARY}")
     add_dependencies(protobuf::libprotobuf ext_protobuf)
 endif()
-set(Protobuf_LIBRARIES ${Protobuf_LIBRARY})
+set(Protobuf_LIBRARIES protobuf::libprotobuf)
 
 if (NOT TARGET protobuf::protoc)
     add_executable(protobuf::protoc IMPORTED)
